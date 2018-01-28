@@ -23,6 +23,156 @@
   <!-- Custom styles for this template -->
   <link href="css/agency.min.css" rel="stylesheet">
 
+  <style>
+    body,
+    html {
+      height: 100%;
+    }
+
+    #map {
+      height: 100%;
+    }
+  </style>
+
+  <script>
+    let map;
+    let myCurrentLocation;
+    let marker;
+    let infoWindow;
+    let geocoder;
+    let userInput;
+    let pos;
+    let service;
+    //製造一二維陣列
+    let nightMarkets = new Array(2);
+
+    nightMarkets[0] = ["景美夜市", "116台北市文山區景行里景美街"];
+    nightMarkets[1] = ["臨江夜市", "106台北市大安區臨江街40巷1弄"];
+    nightMarkets[2] = ["師大夜市", "106台北市大安區師大路"];
+    nightMarkets[3] = ["饒河夜市", "105台北市松山區饒河街"];
+    nightMarkets[4] = ["寧夏夜市", "103台北市大同區寧夏路"];
+    nightMarkets[5] = ["樂華夜市", "234新北市永和區永平路"];
+
+    function initMap() { //繪製一地圖
+      service = new google.maps.DirectionsService();
+      geocoder = new google.maps.Geocoder();
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 23.5, lng: 121 },
+        zoom: 8
+      }
+      );
+      infoWindow = new google.maps.InfoWindow({ map: map });
+
+      // Try HTML5 geolocation.
+      if (navigator.geolocation) {
+        //抓取使用者位置需要時間，因此抓到位置後，會繼續執行，執行到後面就抓不到使用者位置了QAQ
+        navigator.geolocation.getCurrentPosition(function (position) {
+          pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          infoWindow.setPosition(pos);
+          infoWindow.setContent('現在位置');
+          map.setCenter(pos);
+          map.setZoom(10);
+        }, function () {
+          handleLocationError(true, infoWindow, map.getCenter());
+        });
+      } else {
+        // Browser doesn't support Geolocation
+        handleLocationError(false, infoWindow, map.getCenter());
+      }
+      //反轉地址為中文
+      // google.maps.LatLng 物件
+      var coord = new google.maps.LatLng(pos.lng, pos.lat);
+      console.log(coord);
+    }
+
+    function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+      alert('Error: The Geolocation service failed.');
+    }
+
+    //檢查瀏覽器支不支援
+    if (navigator.geolocation) {
+      console.log('Geolocation is supported!');
+    }
+    else {
+      console.log('Geolocation is not supported for this Browser/OS version yet.');
+    }
+
+
+    //標示出夜市位置
+    function showAll() {
+      for (let i = 0; i < nightMarkets.length - 1; i++) {
+        geocoder.geocode({
+          address: nightMarkets[i][1]
+        }, function (results) {
+          //console.log(results);
+          if (results[0]) {//如果有結果，才繼續處理
+            var latlng = results[0].geometry.location;
+            new google.maps.Marker({
+              map: map,
+              position: latlng,
+            });
+            map.setCenter(latlng);//標示打上去，地圖中心自己動，不需要使用者手動拉 
+            map.setZoom(12);
+          }
+        });
+        //console.log(nightMarkets[i])
+        //geocoder.geocode(解碼要求,結果)
+      }
+
+    }
+
+    // 傳入 latLng 資訊至 geocoder.geocode
+    geocoder.geocode({ 'latLng': coord }, function (results, status) {
+      if (status === google.maps.GeocoderStatus.OK) {
+        // 如果有資料就會回傳
+        if (results) {
+          console.log(results[0]);
+        }
+      }
+      // 經緯度資訊錯誤
+      else {
+        alert("Reverse Geocoding failed because: " + status);
+      }
+    });
+
+    /*下拉式選單抓值
+    let selector;
+    selector.options[selector.selectedIndex].value
+    */
+
+    //var val = $("#yourddlID").val();
+    //userInput = destination.options[destination.selectedIndex].text;
+    //下拉式選單取值
+
+    function guide() {
+      //比對使用者輸入和終點位置
+      //開始規劃路徑
+
+      let x = document.getElementById("destination")
+      userInput = x.options[x.selectedIndex].text
+      console.log(userInput);
+
+      service.route({
+        destination: userInput,
+        origin: pos,
+        travelMode: google.maps.TravelMode.TRANSIT
+      }, function (result) {
+        new google.maps.DirectionsRenderer({
+          map: map,//畫在哪一張地圖上
+          directions: result,
+          //panel: document.getElementById("panel") //底下文字資訊欄
+        });
+      }); //service.route(要求,接收回應);要求會連線到google的伺服器處理
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap"></script>
+
+
+
 </head>
 
 <body id="page-top">
@@ -62,13 +212,14 @@
   <header class="masthead">
     <div class="container">
       <div class="intro-text">
-        <div class="intro-lead-in">Welcome To Our Studio!</div>
+        <div class="intro-lead-in">Welcome!!!</div>
         <div class="col-md-10 col-lg-8 col-xl-7 mx-auto">
           <form>
             <div class="form-row">
               <div class="col-12 col-md-9 mb-2 mb-md-0">
                 <div class="form-group">
                   <select class="form-control" id="exampleFormControlSelect1">
+               <option value="non3">請選擇</option>
           <option value="景美夜市">景美夜市</option>
 　         <option value="樂華夜市">樂華夜市</option>
 　         <option value="饒河夜市">饒河夜市</option>
@@ -124,8 +275,10 @@
             <img class="img-fluid" src="img/portfolio/01-thumbnail.jpg" alt="">
           </a>
           <div class="portfolio-caption">
-            <h4>士林夜市</h4>
-            <p class="text-muted">Illustration</p>
+            <h4>景美上海生煎包</h4>
+            <p class="text-muted">
+              <p font-size: "30px">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+            </p>
           </div>
         </div>
         <div class="col-md-4 col-sm-6 portfolio-item">
@@ -138,8 +291,10 @@
             <img class="img-fluid" src="img/portfolio/02-thumbnail.jpg" alt="">
           </a>
           <div class="portfolio-caption">
-            <h4>Explore</h4>
-            <p class="text-muted">Graphic Design</p>
+            <h4>高記雙管四神湯</h4>
+            <p class="text-muted">
+              <p font-size: "30px">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+            </p>
           </div>
         </div>
         <div class="col-md-4 col-sm-6 portfolio-item">
@@ -152,8 +307,10 @@
             <img class="img-fluid" src="img/portfolio/03-thumbnail.jpg" alt="">
           </a>
           <div class="portfolio-caption">
-            <h4>Finish</h4>
-            <p class="text-muted">Identity</p>
+            <h4>景美鐵板燒</h4>
+            <p class="text-muted">
+              <p font-size: "30px">&#9733;&#9733;&#9733;&#9733;</p>
+            </p>
           </div>
         </div>
         <div class="col-md-4 col-sm-6 portfolio-item">
@@ -166,8 +323,10 @@
             <img class="img-fluid" src="img/portfolio/04-thumbnail.jpg" alt="">
           </a>
           <div class="portfolio-caption">
-            <h4>Lines</h4>
-            <p class="text-muted">Branding</p>
+            <h4>Mint義大利麵館</h4>
+            <p class="text-muted">
+              <p font-size: "30px">&#9733;&#9733;&#9733;&#9733;</p>
+            </p>
           </div>
         </div>
         <div class="col-md-4 col-sm-6 portfolio-item">
@@ -180,8 +339,10 @@
             <img class="img-fluid" src="img/portfolio/05-thumbnail.jpg" alt="">
           </a>
           <div class="portfolio-caption">
-            <h4>Southwest</h4>
-            <p class="text-muted">Website Design</p>
+            <h4>好吃鹹水機</h4>
+            <p class="text-muted">
+              <p font-size: "30px">&#9733;&#9733;&#9733;&#9733;</p>
+            </p>
           </div>
         </div>
         <div class="col-md-4 col-sm-6 portfolio-item">
@@ -194,8 +355,10 @@
             <img class="img-fluid" src="img/portfolio/06-thumbnail.jpg" alt="">
           </a>
           <div class="portfolio-caption">
-            <h4>Window</h4>
-            <p class="text-muted">Photography</p>
+            <h4>楊家手工水餃</h4>
+            <p class="text-muted">
+              <p font-size: "30px">&#9733;&#9733;&#9733;</p>
+            </p>
           </div>
         </div>
       </div>
@@ -508,16 +671,15 @@
             <div class="col-lg-8 mx-auto">
               <div class="modal-body">
                 <!-- Project Details Go Here -->
-                <h2 class="text-uppercase">Project Name</h2>
-                <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
+                <h2 class="text-uppercase">景美上海生煎包</h2>
+                <p class="item-intro text-muted"></p>
                 <img class="img-fluid d-block mx-auto" src="img/portfolio/01-full.jpg" alt="">
-                <p>Use this area to describe your project. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est blanditiis
-                  dolorem culpa incidunt minus dignissimos deserunt repellat aperiam quasi sunt officia expedita beatae cupiditate,
-                  maiores repudiandae, nostrum, reiciendis facere nemo!</p>
+                <p>景美上海生煎包是景美夜市的人氣美食之一，時常大排長龍，有菜包、肉包兩種口味。<br> 皮薄餡多，一顆12元，菜包能吃到高麗菜的爽脆，肉包則是鮮嫩多汁，有附辣椒醬，但還是原味最好吃。
+                </p>
                 <ul class="list-inline">
-                  <li>Date: January 2017</li>
-                  <li>Client: Threads</li>
-                  <li>Category: Illustration</li>
+                  <li>地址：116台北市文山區景文街55號</li>
+                  <li>電話：(02)2935-2461</li>
+                  <li>營業時間：7:30~12:30；15:30~23:30</li>
                 </ul>
                 <button class="btn btn-primary" data-dismiss="modal" type="button">
                     <i class="fa fa-times"></i>
@@ -544,16 +706,16 @@
             <div class="col-lg-8 mx-auto">
               <div class="modal-body">
                 <!-- Project Details Go Here -->
-                <h2 class="text-uppercase">Project Name</h2>
-                <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
+                <h2 class="text-uppercase">高記雙管四神湯</h2>
+                <p class="item-intro text-muted"></p>
                 <img class="img-fluid d-block mx-auto" src="img/portfolio/02-full.jpg" alt="">
-                <p>Use this area to describe your project. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est blanditiis
-                  dolorem culpa incidunt minus dignissimos deserunt repellat aperiam quasi sunt officia expedita beatae cupiditate,
-                  maiores repudiandae, nostrum, reiciendis facere nemo!</p>
+                <p>說到高記雙管四神湯絕對是來到景美夜市必吃的美食小吃，店內的餐點個個都是招牌，先來說說雙管四神湯($55)，所謂「雙管」是老闆將豬小腸中再塞入豬小腸，腸中腸的雙層口感更為Ｑ彈有嚼勁，湯頭裡加了點米酒， 清清爽爽吃得到蓮子與薏仁，網路上有人嫌味道太淡，但我們就是喜歡這一味。蚵仔多到滿出來的蚵仔麵線($40/小)，
+                  是Alice心目中最超值好吃的蚵仔麵線，從第一口到最後一口都吃得到蚵仔，新鮮的蚵仔沒有腥味，連最怕腥味的Ken都搶著吃；喜歡的話建議可以點一份乾蚵($70)吃到爽啊。除非你餓了兩天否則千萬別點大碗的招牌油飯($35/小)，老闆添飯超霸氣，滿滿一碗凸字型的油飯淋上特製肉汁，吃的時候再加上一點特製甜辣醬，更添風味。
+                </p>
                 <ul class="list-inline">
-                  <li>Date: January 2017</li>
-                  <li>Client: Explore</li>
-                  <li>Category: Graphic Design</li>
+                  <li>地址：台北市文山區景美街139號</li>
+                  <li>電話：0911-290-166</li>
+                  <li>營業時間：16:00～23:30(週一公休)</li>
                 </ul>
                 <button class="btn btn-primary" data-dismiss="modal" type="button">
                     <i class="fa fa-times"></i>
@@ -580,16 +742,14 @@
             <div class="col-lg-8 mx-auto">
               <div class="modal-body">
                 <!-- Project Details Go Here -->
-                <h2 class="text-uppercase">Project Name</h2>
-                <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
+                <h2 class="text-uppercase">景美鐵板燒</h2>
+                <p class="item-intro text-muted"></p>
                 <img class="img-fluid d-block mx-auto" src="img/portfolio/03-full.jpg" alt="">
-                <p>Use this area to describe your project. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est blanditiis
-                  dolorem culpa incidunt minus dignissimos deserunt repellat aperiam quasi sunt officia expedita beatae cupiditate,
-                  maiores repudiandae, nostrum, reiciendis facere nemo!</p>
+                <p>台式鐵板燒的調味就是一醬到底囉，豬、牛、羊肉片套餐$130，附兩種青菜，飯、湯、紅茶則是吃到飽，還有另一種是全餐$240，多了雪魚、花枝、蝦仁，適合食量大的人或是雙人共享；而鐵板豆腐($30)、九層塔煎蛋($30)、奶油香菇($50)都是許多饕客會加點的人氣配菜。景美夜市有兩家鐵板燒，一是168鐵板燒；一是景美鐵板燒，168鐵板燒在網路上較多人推，但是我們比較喜歡後者，主要考量是景美鐵板燒用餐環境較為舒適，口味上倒是差異不大。</p>
                 <ul class="list-inline">
-                  <li>Date: January 2017</li>
-                  <li>Client: Finish</li>
-                  <li>Category: Identity</li>
+                  <li>地址：台北市文山區景文街143號</li>
+                  <li>電話：(02)2933-7876</li>
+                  <li></li>
                 </ul>
                 <button class="btn btn-primary" data-dismiss="modal" type="button">
                     <i class="fa fa-times"></i>
@@ -616,16 +776,14 @@
             <div class="col-lg-8 mx-auto">
               <div class="modal-body">
                 <!-- Project Details Go Here -->
-                <h2 class="text-uppercase">Project Name</h2>
+                <h2 class="text-uppercase">Mint Pasta義大利麵館</h2>
                 <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
                 <img class="img-fluid d-block mx-auto" src="img/portfolio/04-full.jpg" alt="">
-                <p>Use this area to describe your project. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est blanditiis
-                  dolorem culpa incidunt minus dignissimos deserunt repellat aperiam quasi sunt officia expedita beatae cupiditate,
-                  maiores repudiandae, nostrum, reiciendis facere nemo!</p>
+                <p>Mint義大利麵館是世新學生口耳相傳的隱藏版平民美食，位置十分隱密，第一次來的人通常要花點時間才能找到，即使如此生意還是好到不行，每到用餐時間店內座無虛席，主餐的價格分布在$115~165之間，平實的價格還可以免費加麵一次(需點餐時先告知)，難怪受到學生們的喜愛</p>
                 <ul class="list-inline">
-                  <li>Date: January 2017</li>
-                  <li>Client: Lines</li>
-                  <li>Category: Branding</li>
+                  <li>地址：台北市文山區景興路274-2號</li>
+                  <li>電話：(02)2933-0811 (不可訂位)</li>
+                  <li>營業時間：11:00~22:00 (最後供餐21:00) ，周日公休</li>
                 </ul>
                 <button class="btn btn-primary" data-dismiss="modal" type="button">
                     <i class="fa fa-times"></i>
@@ -652,16 +810,16 @@
             <div class="col-lg-8 mx-auto">
               <div class="modal-body">
                 <!-- Project Details Go Here -->
-                <h2 class="text-uppercase">Project Name</h2>
-                <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
+                <h2 class="text-uppercase">好吃塩水雞</h2>
+                <p class="item-intro text-muted"></p>
                 <img class="img-fluid d-block mx-auto" src="img/portfolio/05-full.jpg" alt="">
-                <p>Use this area to describe your project. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est blanditiis
-                  dolorem culpa incidunt minus dignissimos deserunt repellat aperiam quasi sunt officia expedita beatae cupiditate,
-                  maiores repudiandae, nostrum, reiciendis facere nemo!</p>
+                <p>許多人就是沖著這家來逛景美夜市的，是在地老字號的攤位，沒有價目表但不用擔心被結帳金額嚇到，只要看到一袋一袋裝好的就是三袋50元，他們家的口味偏清淡但辣椒很辣，雞肉紮實有嚼勁，配上QQ的雞皮果然如招牌上的兩個字”好吃”啊。
+                  去骨雞腿($50)是必點人氣商品；帶骨雞胸肉($100/3入)也很超值，喜歡啃骨頭的朋友有福了。有許多種類的蔬菜、甜不辣、百頁豆腐、雞腸、雞肝、雞脖子、雞冠…等等琳瑯滿目。
+                </p>
                 <ul class="list-inline">
-                  <li>Date: January 2017</li>
-                  <li>Client: Southwest</li>
-                  <li>Category: Website Design</li>
+                  <li>地址：116台北市文山區景後街133號</li>
+                  <li></li>
+                  <li></li>
                 </ul>
                 <button class="btn btn-primary" data-dismiss="modal" type="button">
                     <i class="fa fa-times"></i>
@@ -688,16 +846,15 @@
             <div class="col-lg-8 mx-auto">
               <div class="modal-body">
                 <!-- Project Details Go Here -->
-                <h2 class="text-uppercase">Project Name</h2>
-                <p class="item-intro text-muted">Lorem ipsum dolor sit amet consectetur.</p>
+                <h2 class="text-uppercase">楊家手工水餃</h2>
+                <p class="item-intro text-muted"></p>
                 <img class="img-fluid d-block mx-auto" src="img/portfolio/06-full.jpg" alt="">
-                <p>Use this area to describe your project. Lorem ipsum dolor sit amet, consectetur adipisicing elit. Est blanditiis
-                  dolorem culpa incidunt minus dignissimos deserunt repellat aperiam quasi sunt officia expedita beatae cupiditate,
-                  maiores repudiandae, nostrum, reiciendis facere nemo!</p>
+                <p>楊家手工水餃是康熙來了曾經介紹過的人氣銅板美食，有高麗菜、韭菜兩種口味。 10顆50元，平價卻不隨便，他們家的水餃可不是冷凍的唷，而是現包現煮，皮薄餡多汁；其他如酸辣湯、貢丸湯、魚丸湯都20元/碗，一頓飯吃下來70元CP值滿高的~
+                </p>
                 <ul class="list-inline">
-                  <li>Date: January 2017</li>
-                  <li>Client: Window</li>
-                  <li>Category: Photography</li>
+                  <li>地址：116台北市文山區景後街178號</li>
+                  <li>電話：0910-111-640</li>
+                  <li>營業時間：16:30~00:00</li>
                 </ul>
                 <button class="btn btn-primary" data-dismiss="modal" type="button">
                     <i class="fa fa-times"></i>
